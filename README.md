@@ -12,7 +12,7 @@ dprint. In your project's dprint configuration file:
 {
   "includes": ["**.wat"],
   "plugins": [
-    "https://raw.githubusercontent.com/tjjfvi/form.wat/main/form.wasm"
+    "https://raw.githubusercontent.com/tjjfvi/form.wat/v0.1.0/form.wasm"
   ]
 }
 ```

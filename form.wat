@@ -301,7 +301,7 @@
     (global.get $license_text_len)
   )
 
-  (data $plugin_info "{\"name\":\"form.wat\",\"version\":\"0.0.0\",\"configKey\":\"wat\",\"fileExtensions\":[\"wat\"],\"helpUrl\":\"https://github.com/tjjfvi/form.wat\",\"configSchemaUrl\":\"\"}")
+  (data $plugin_info "{\"name\":\"form.wat\",\"version\":\"0.1.0\",\"configKey\":\"wat\",\"fileExtensions\":[\"wat\"],\"helpUrl\":\"https://github.com/tjjfvi/form.wat\",\"configSchemaUrl\":\"\"}")
   (global $plugin_info_len i32 (i32.const 148))
 
   (func (export "get_plugin_info") (result i32)
