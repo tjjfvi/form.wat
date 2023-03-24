@@ -1,9 +1,9 @@
 (module
-  (import "log" "brk" (func $log_brk))
-  (import "log" "u32" (func $log_u32 (param i32)))
-  (import "log" "stre" (func $log_stre (param i32) (param i32)))
-  (func $dbg_u32 (param $v i32) (result i32) local.get $v call $log_u32 local.get $v)
-  (func $log_strl (param $s i32) (param $l i32) local.get $s local.get $s local.get $l i32.add call $log_strl)
+  ;; (import "log" "brk" (func $log_brk))
+  ;; (import "log" "u32" (func $log_u32 (param i32)))
+  ;; (import "log" "stre" (func $log_stre (param i32) (param i32)))
+  ;; (func $dbg_u32 (param $v i32) (result i32) local.get $v call $log_u32 local.get $v)
+  ;; (func $log_strl (param $s i32) (param $l i32) local.get $s local.get $s local.get $l i32.add call $log_strl)
 
   (memory 128)
   (export "memory" (memory 0))
@@ -283,8 +283,8 @@
     (global.get $license_text_len)
   )
 
-  (data $plugin_info "{\"name\":\"form.wat\",\"version\":\"0.0.0\",\"configKey\":\"wat\",fileExtensions:[\"wat\"],\"helpUrl\":\"https://github.com/tjjfvi/form.wat\",\"configSchemaUrl\":\"\"")
-  (global $plugin_info_len i32 (i32.const 145))
+  (data $plugin_info "{\"name\":\"form.wat\",\"version\":\"0.0.0\",\"configKey\":\"wat\",\"fileExtensions\":[\"wat\"],\"helpUrl\":\"https://github.com/tjjfvi/form.wat\",\"configSchemaUrl\":\"\"}")
+  (global $plugin_info_len i32 (i32.const 148))
 
   (func (export "get_plugin_info") (result i32)
     (memory.init $plugin_info (global.get $shared_start) (i32.const 0) (global.get $plugin_info_len))
