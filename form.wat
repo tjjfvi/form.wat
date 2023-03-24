@@ -1,9 +1,8 @@
 (module
   ;; (import "log" "brk" (func $log_brk))
   ;; (import "log" "u32" (func $log_u32 (param i32)))
-  ;; (import "log" "stre" (func $log_stre (param i32) (param i32)))
+  ;; (import "log" "str" (func $log_str (param i32) (param i32)))
   ;; (func $dbg_u32 (param $v i32) (result i32) local.get $v call $log_u32 local.get $v)
-  ;; (func $log_strl (param $s i32) (param $l i32) local.get $s local.get $s local.get $l i32.add call $log_strl)
 
   (memory 128)
   (export "memory" (memory 0))
@@ -29,8 +28,11 @@
   (global $indent_char (mut i32) (i32.const 32))
   (global $indent_len (mut i32) (i32.const 2))
 
-  (data $error_string_newline "newline in string")
-  (global $error_string_newline_len i32 (i32.const 17))
+  (data $error_string "unterminated string")
+  (global $error_string_len i32 (i32.const 19))
+
+  (data $error_parens "mismatched parens")
+  (global $error_parens_len i32 (i32.const 17))
 
   (func $format (result i32)
     (local $read_idx i32)
@@ -76,8 +78,8 @@
       ) (else (if (local.get $in_str) (then
         (if (i32.eq (local.get $byte) (i32.const 10)) (then
           ;; '\n'
-          (memory.init $error_string_newline (global.get $output_start) (i32.const 0) (global.get $error_string_newline_len))
-          (global.set $output_len (global.get $error_string_newline_len))
+          (memory.init $error_string (global.get $output_start) (i32.const 0) (global.get $error_string_len))
+          (global.set $output_len (global.get $error_string_len))
           (return (i32.const 2))
         ))
 
@@ -158,6 +160,11 @@
             (local.set $space_count (i32.const 0))
           ) (else
             ;; ')'
+            (if (i32.eq (local.get $depth) (i32.const 0)) (then
+              (memory.init $error_parens (global.get $output_start) (i32.const 0) (global.get $error_parens_len))
+              (global.set $output_len (global.get $error_parens_len))
+              (return (i32.const 2))
+            ))
             (if (i32.gt_u (i32.load8_u (local.get $depth)) (local.get $was_newline)) (then
               (local.set $indent (i32.sub (local.get $indent) (i32.const 1)))
               (if (local.get $was_newline) (then
@@ -206,6 +213,18 @@
       (local.tee $read_idx (i32.add (local.get $read_idx) (i32.const 1)))
       (br_if $a (i32.lt_u (local.get $read_end)))
     )
+
+    (if (local.get $in_str) (then
+      (memory.init $error_string (global.get $output_start) (i32.const 0) (global.get $error_string_len))
+      (global.set $output_len (global.get $error_string_len))
+      (return (i32.const 2))
+    ))
+
+    (if (i32.ne (local.get $depth) (i32.const 0)) (then
+      (memory.init $error_parens (global.get $output_start) (i32.const 0) (global.get $error_parens_len))
+      (global.set $output_len (global.get $error_parens_len))
+      (return (i32.const 2))
+    ))
 
     (if (local.get $was_newline) (then) (else
       (if (i32.load8_u (local.get $depth)) (then) (else
