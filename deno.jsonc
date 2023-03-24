@@ -1,0 +1,8 @@
+{
+  "lock": false,
+  "tasks": {
+    "dev": "deno run -A --watch=form.wat run.ts",
+    "build": "deno task wasm",
+    "wasm": "wat2wasm --enable-threads form.wat --output form.wasm"
+  }
+}
