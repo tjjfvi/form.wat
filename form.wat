@@ -58,8 +58,7 @@
       (local.set $byte (i32.load8_u (local.get $read_idx)))
 
       (if (local.get $in_comment) (then
-        (if (local.get $multi_comment) (then
-        ) (else
+        (if (local.get $multi_comment) (then) (else
           (if (i32.eq (local.get $byte (i32.const 10))) (then
             ;; '\n'
             (local.set $in_comment (i32.const 0))
@@ -113,10 +112,9 @@
           ))
         ) (else (if (i32.eq (local.get $byte) (i32.const 10)) (then
           ;; '\n'
-          (if (i32.load8_u (local.get $depth)) (then) (else
-            (i32.store8 (local.get $depth) (i32.const 1))
-            (local.set $indent (i32.add (local.get $indent) (i32.const 1)))
-          ))
+          (local.set $was_newline (i32.load8_u (local.get $depth)))
+          (local.set $indent (i32.add (local.get $indent) (i32.eq (local.get $was_newline) (i32.const 0))))
+          (i32.store8 (local.get $depth) (i32.add (local.get $was_newline) (i32.const 1)))
           (local.tee $write_idx (i32.sub (local.get $write_idx) (local.get $space_count)))
           (i32.store8 (i32.const 10)) ;; todo: crlf
           (memory.fill
@@ -160,7 +158,7 @@
             (local.set $space_count (i32.const 0))
           ) (else
             ;; ')'
-            (if (i32.load8_u (local.get $depth)) (then
+            (if (i32.gt_u (i32.load8_u (local.get $depth)) (local.get $was_newline)) (then
               (local.set $indent (i32.sub (local.get $indent) (i32.const 1)))
               (if (local.get $was_newline) (then
                 (local.set $write_idx (i32.sub (local.get $write_idx) (global.get $indent_len)))
@@ -175,7 +173,8 @@
                 (local.set $write_idx (i32.add (local.get $write_idx) (local.get $space_count)))
               ))
             ) (else
-              (local.set $write_idx (i32.sub (local.get $write_idx) (local.get $space_count)))
+              (local.set $indent (i32.sub (local.get $indent) (local.get $was_newline)))
+              (local.set $write_idx (i32.sub (local.get $write_idx) (i32.add (local.get $was_newline) (local.get $space_count))))
             ))
             (local.set $depth (i32.sub (local.get $depth) (i32.const 1)))
             (i32.store8 (local.get $write_idx) (local.get $byte))
