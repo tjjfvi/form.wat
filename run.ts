@@ -27,4 +27,20 @@ const formwat = createFromInstance(wasmInstance);
 
 formwat.setConfig({}, { foo: "bar" });
 
-console.log(formwat.formatText("foo.wat", "(a b;;x\nc(d\ne ;; y\n)f\nf( g ))\n"));
+console.log(formwat.formatText("foo.wat", String.raw`(module
+(a b;;x
+w" x \"  y \\"z
+w""
+""z
+""
+"a\nb"
+c(d
+e ;; y
+)f
+f( g ))
+)
+`));
+
+import {assertEquals} from "https://deno.land/std@0.181.0/testing/asserts.ts"
+const source = await Deno.readTextFile("form.wat")
+assertEquals(formwat.formatText("foo.wat", source), source)

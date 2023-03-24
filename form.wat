@@ -29,7 +29,10 @@
   (global $indent_char (mut i32) (i32.const 32))
   (global $indent_len (mut i32) (i32.const 2))
 
-  (func $format
+  (data $error_string_newline "newline in string")
+  (global $error_string_newline_len i32 (i32.const 17))
+
+  (func $format (result i32)
     (local $read_idx i32)
     (local $read_end i32)
     (local $write_idx i32)
@@ -42,24 +45,21 @@
     (local $depth i32)
     (local $in_comment i32)
     (local $multi_comment i32)
+    (local $in_str i32)
 
     (local.set $indent (i32.const 0))
 
     (local.tee $read_idx (global.get $input_start))
     (global.set $output_start (local.tee $write_idx (local.tee $read_end (i32.add (global.get $input_len)))))
 
-    (call $log_stre (local.get $read_idx) (local.get $read_end))
-
     (i32.store8 (i32.const 0) (i32.const 1))
-
-    (call $log_u32 (local.get $read_end))
 
     (loop $a
       (local.set $byte (i32.load8_u (local.get $read_idx)))
 
       (if (local.get $in_comment) (then
         (if (local.get $multi_comment) (then
-        ) (else 
+        ) (else
           (if (i32.eq (local.get $byte (i32.const 10))) (then
             ;; '\n'
             (local.set $in_comment (i32.const 0))
@@ -74,7 +74,35 @@
           (i32.store8 (local.get $write_idx) (local.get $byte))
           (local.set $write_idx (i32.add (local.get $write_idx) (i32.const 1)))
         ))
-      ) (else 
+      ) (else (if (local.get $in_str) (then
+        (if (i32.eq (local.get $byte) (i32.const 10)) (then
+          ;; '\n'
+          (memory.init $error_string_newline (global.get $output_start) (i32.const 0) (global.get $error_string_newline_len))
+          (global.set $output_len (global.get $error_string_newline_len))
+          (return (i32.const 2))
+        ))
+
+        (i32.store8 (local.get $write_idx) (local.get $byte))
+        (local.set $write_idx (i32.add (local.get $write_idx) (i32.const 1)))
+
+        (if (i32.eq (local.get $in_str) (i32.const 2)) (then
+          ;; escape sequence
+          (local.set $in_str (i32.const 1))
+        ) (else
+          (if (i32.eq (local.get $byte) (i32.const 92)) (then
+            ;; '\'
+            (local.set $in_str (i32.const 2))
+          ) (else (if (i32.eq (local.get $byte) (i32.const 34)) (then
+            ;; '"'
+            (local.set $in_str (i32.const 0))
+            (i32.store8 (local.get $write_idx) (i32.const 32))
+            (local.set $write_idx (i32.add (local.get $write_idx) (i32.const 1)))
+            (local.set $space_count (i32.const 1))
+            (local.set $was_newline (i32.const 0))
+            (local.set $in_ident (i32.const 0))
+          ))))
+        ))
+      ) (else
         (if (i32.eq (local.get $byte) (i32.const 32)) (then
           ;; ' '
           (if (local.get $in_ident) (then
@@ -130,7 +158,7 @@
             (i32.store8 (local.get $write_idx) (local.get $byte))
             (local.set $write_idx (i32.add (local.get $write_idx) (i32.const 1)))
             (local.set $space_count (i32.const 0))
-          ) (else 
+          ) (else
             ;; ')'
             (if (i32.load8_u (local.get $depth)) (then
               (local.set $indent (i32.sub (local.get $indent) (i32.const 1)))
@@ -157,6 +185,15 @@
           ))
           (local.set $in_ident (i32.const 0))
           (local.set $was_newline (i32.const 0))
+        ) (else (if (i32.eq (local.get $byte) (i32.const 34)) (then
+          ;; '"'
+          (if (local.get $in_ident) (then
+            (i32.store8 (local.get $write_idx) (i32.const 32))
+            (local.set $write_idx (i32.add (local.get $write_idx) (i32.const 1)))
+          ))
+          (i32.store8 (local.get $write_idx) (local.get $byte))
+          (local.set $write_idx (i32.add (local.get $write_idx) (i32.const 1)))
+          (local.set $in_str (i32.const 1))
         ) (else
           ;; ident char
           (i32.store8 (local.get $write_idx) (local.get $byte))
@@ -164,8 +201,8 @@
           (local.set $in_ident (i32.const 1))
           (local.set $space_count (i32.const 0))
           (local.set $was_newline (i32.const 0))
-        ))))))))
-      ))
+        ))))))))))
+      ))))
 
       (local.tee $read_idx (i32.add (local.get $read_idx) (i32.const 1)))
       (br_if $a (i32.lt_u (local.get $read_end)))
@@ -179,12 +216,11 @@
       (local.tee $write_idx (i32.sub (local.get $write_idx) (local.get $space_count)))
       (i32.store8 (i32.const 10)) ;; todo: crlf
       (local.set $write_idx (i32.add (local.get $write_idx) (i32.const 1)))
-
-      (call $log_brk)
-      (call $log_stre (global.get $output_start) (local.get $write_idx))
     ))
-  
+
     (global.set $output_len (i32.sub (local.get $write_idx) (global.get $output_start)))
+
+    (i32.const 1)
   )
 
   (func (export "get_wasm_memory_buffer_size") (result i32)
@@ -269,8 +305,6 @@
     (global.set $output_len (global.get $input_len))
 
     (call $format)
-
-    (i32.const 1)
   )
 
   (func (export "get_formatted_text") (result i32)
