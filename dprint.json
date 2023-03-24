@@ -11,8 +11,7 @@
     "lineWidth": 80,
     "textWrap": "always"
   },
-  "includes": ["**.{json,ts,wat}"],
-  "excludes": ["target", "util/tsFormatter.ts"],
+  "includes": ["**.{json,ts,wat,md}"],
   "plugins": [
     "https://plugins.dprint.dev/json-0.17.0.wasm",
     "https://plugins.dprint.dev/markdown-0.15.2.wasm",
